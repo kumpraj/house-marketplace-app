@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { getAuth, createUserWithEmailAndPassword, updateProfile} from 'firebase/auth';
+import { setDoc, doc, serverTimestamp} from 'firebase/firestore';
+import { db } from '../firebase.config';
 import visibilityIcon from '../assets/svg/visibilityIcon.svg'
 import {ReactComponent as ArrowRightIcon} from '../assets/svg/keyboardArrowRightIcon.svg'
+import {toast} from 'react-toastify';
 
 
 function SignUp() {
@@ -23,6 +27,40 @@ function SignUp() {
     }))
   }
 
+  const onSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      
+      const auth = getAuth();
+
+      const userCredentials = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+        );
+      
+      const user = userCredentials.user
+
+      updateProfile(auth.currentUser, {
+        displayName: name
+      })
+
+      const formDataCopy ={ ...formData}
+      delete formDataCopy.password;
+      formDataCopy.timestamp = serverTimestamp();
+      
+      await setDoc(doc(db,"users",user.uid),formDataCopy);
+
+
+
+      navigate('/');
+
+    } catch (error) {
+      toast.error('Something went wrong with registration');
+    }
+  }
+
 
     return (
       <>
@@ -34,7 +72,7 @@ function SignUp() {
           </header>
 
           
-            <form >
+            <form onSubmit={onSubmit}>
               <input type="text"
                 className="nameInput"
                 value={name}
